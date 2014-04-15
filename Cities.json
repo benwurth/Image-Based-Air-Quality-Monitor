@@ -1,0 +1,18 @@
+// Where "tlc" is Top-left coordinate and "brc" is bottom-right coordinate.
+{
+	"name": "San Diego",
+	"tlc": [32.809604, -117.257080],
+	"brc": [32.654226, -116.935730]
+}
+
+{
+	"name": "Sacramento",
+	"tlc": [38.644596,-121.58844],
+	"brc": [38.496426,-121.356354]
+}
+
+{
+	"name": "Los Angeles",
+	"tlc": [34.13646, -118.498535],
+	"brc": [33.593674, -117.770691]
+}
