@@ -5,10 +5,14 @@ color palette2 = #EDD07D;
 color palette3 = #E1AF46;
 color palette4 = #DF812B;
 color palette5 = #E55124;
+color[] paletteArray = {palette1, palette2, palette3, palette4, palette5};
+
+boolean debugColors = true;
 
 int fsm = 1;
 
 //----------------------------  Main Functions  ------------------------------//
+
 void setup() {
 	size(1200, 700);
 	
@@ -22,6 +26,10 @@ void setup() {
 void draw() {
 	if (fsm == 1) {
 		drawSelectionScreen();
+		drawMap();
+	}
+	if (debugColors) {
+		drawPalette();
 	}
 }
 
@@ -39,6 +47,42 @@ boolean checkDirectoryExistence(String directoryName) {
 
 void drawSelectionScreen() {
 	background(palette2);
+}
+
+void drawMap() {
+	int x1 = 450;
+	int y1 = 50;
+	int x2 = 1150;
+	int y2 = 550;
+
+	fill(162);
+	rectMode(CORNERS);
+	rect(x1, y1, x2, y2);
+	line(x1, y1, x2, y2);
+	line(x1, y2, x2, y1);
+
+	fill(0);
+	textSize(32);
+	textAlign(CENTER, CENTER);
+	text("MAP", averageInt(x1, x2), averageInt(y1, y2));
+}
+
+void drawPalette() {
+	for (int i = 0; i < paletteArray.length; ++i) {
+		fill(paletteArray[i]);
+		rectMode(CORNER);
+		rect(10*i, 0, 10, 10);
+	}
+}
+
+int averageInt(int... numbers) {
+	int total = 0;
+
+	for (int i : numbers) {
+		total += i;
+	}
+
+	return total/numbers.length;
 }
 
 //--------------------------------  Classes  ---------------------------------//
