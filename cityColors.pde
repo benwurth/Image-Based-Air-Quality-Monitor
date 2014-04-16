@@ -46,9 +46,6 @@ void setup() {
 		float[] bottomRightCoordinate = 
 			{city.getFloat("brcLat"), city.getFloat("brcLon")};
 
-		println(name + ", " + topLeftCoordinate[0] + ", " + topLeftCoordinate[1] 
-			+ ", " + bottomRightCoordinate[0] + ", " + bottomRightCoordinate[1]);
-
 		cities.add(new City(name, topLeftCoordinate, bottomRightCoordinate));
 	}
 
@@ -157,7 +154,18 @@ void drawMap() {
 		+ "&zoom=10"
 		+ "&size=" + str(x2-x1) +"x" + str(y2-y1)
 		+ "&maptype=roadmap"
-		+ "&sensor=false";
+		+ "&sensor=false"
+		+ "&path=color:0x00000000|weight:5|fillcolor:0x" 
+			+ hex(palette1, 6) + "|"
+			+ str(city.tlCoords[0]) + ","
+				+ str(city.tlCoords[1]) + "|"
+			+ str(city.brCoords[0]) + ","
+				+ str(city.tlCoords[1]) + "|"
+			+ str(city.brCoords[0]) + ","
+				+ str(city.brCoords[1]) + "|"
+			+ str(city.tlCoords[0]) + ","
+				+ str(city.brCoords[1])
+		;
 
 		if (!mapImageLoaded) {
 			mapImage = loadImage(url, "png");
