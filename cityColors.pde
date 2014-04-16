@@ -1,4 +1,8 @@
-import g4p_controls.*;
+import controlP5.*;
+
+ControlP5 cp5;
+
+DropdownList citiesDropDown;
 
 color palette1 = #6DC6A8;
 color palette2 = #EDD07D;
@@ -11,22 +15,27 @@ boolean debugColors = true;
 
 int fsm = 1;
 
+String picturesDirectory = "pictures";
+
 //----------------------------  Main Functions  ------------------------------//
 
 void setup() {
 	size(1200, 700);
 	
 	// Check for directory existence
-	createOutput("folder");
+	createOutput(picturesDirectory);
 
 	// Load city information
 	
+
+	if (fsm == 1) {
+		drawCitiesDropDown();
+	}
 }
 
 void draw() {
 	if (fsm == 1) {
 		drawSelectionScreen();
-		drawMap();
 	}
 	if (debugColors) {
 		drawPalette();
@@ -47,6 +56,22 @@ boolean checkDirectoryExistence(String directoryName) {
 
 void drawSelectionScreen() {
 	background(palette2);
+	drawMap();
+}
+
+void drawCitiesDropDown() {
+	cp5 = new ControlP5(this);
+	PFont p = createFont("Proxima Nova", 24);
+	cp5.setControlFont(p);
+	citiesDropDown = cp5.addDropdownList("Select City").setPosition(50,100);
+	for (int i=0;i<40;i++) {
+    	citiesDropDown.addItem("item "+i, i);
+	}
+	citiesDropDown.setItemHeight(24);
+	citiesDropDown.setBarHeight(36);
+	citiesDropDown.setWidth(350);
+	citiesDropDown.setBackgroundColor(paletteArray[2]);
+	citiesDropDown.setColorBackground(paletteArray[3]);
 }
 
 void drawMap() {
