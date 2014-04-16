@@ -68,6 +68,7 @@ void draw() {
 
 void controlEvent(ControlEvent theEvent) {
 	if (theEvent.isGroup()) {
+		mapImageLoaded = false;
 		mapFSM = int(theEvent.getGroup().getValue());
 		println("event from group : "+theEvent.getGroup().getValue()+" from "
 			+theEvent.getGroup());
@@ -142,10 +143,28 @@ void drawMap() {
 
 			if (!mapImageLoaded) {
 				mapImage = loadImage(url, "png");
+				mapImageLoaded = true;
 			}
 			imageMode(CORNERS);
 			image(mapImage, x1, y1, x2, y2);
 		}
+	}
+	else {
+		City city = cities.get(mapFSM);
+
+		String url = "http://maps.googleapis.com/maps/api/staticmap"
+		+ "?center=" + str(city.getCenterLat()) + "," + str(city.getCenterLon())
+		+ "&zoom=10"
+		+ "&size=" + str(x2-x1) +"x" + str(y2-y1)
+		+ "&maptype=roadmap"
+		+ "&sensor=false";
+
+		if (!mapImageLoaded) {
+			mapImage = loadImage(url, "png");
+			mapImageLoaded = true;
+		}
+		imageMode(CORNERS);
+		image(mapImage, x1, y1, x2, y2);
 	}
 }
 
@@ -167,6 +186,16 @@ int averageInt(int... numbers) {
 	return total/numbers.length;
 }
 
+float averageFloat(float... numbers) {
+	float total = 0;
+
+	for (float f : numbers) {
+		total += f;
+	}
+
+	return total/numbers.length;
+}
+
 //--------------------------------  Classes  ---------------------------------//
 
 class City {
@@ -183,4 +212,11 @@ class City {
 		brCoords = brc;
 	}
 
+	float getCenterLat() {
+		return averageFloat(tlCoords[0], brCoords[0]);
+	}
+
+	float getCenterLon() {
+		return averageFloat(tlCoords[1], brCoords[1]);
+	}
 }
