@@ -1,8 +1,11 @@
 import controlP5.*;
 
 ControlP5 cp5;
-
 DropdownList citiesDropDown;
+
+JSONArray cityList;
+
+ArrayList<City> cities;
 
 color palette1 = #6DC6A8;
 color palette2 = #EDD07D;
@@ -11,9 +14,14 @@ color palette4 = #DF812B;
 color palette5 = #E55124;
 color[] paletteArray = {palette1, palette2, palette3, palette4, palette5};
 
-boolean debugColors = true;
+PImage mapImage;
+boolean mapImageLoaded = false;
 
-int fsm = 1;
+boolean debugColors = true;
+boolean debugPlaceholders = false;
+
+int screenFSM = 1;
+int mapFSM = -1;
 
 String picturesDirectory = "pictures";
 
@@ -26,19 +34,47 @@ void setup() {
 	createOutput(picturesDirectory);
 
 	// Load city information
-	
+	cities = new ArrayList<City>();
 
-	if (fsm == 1) {
+	cityList = loadJSONArray("cities.json");
+	for (int i = 0; i < cityList.size(); ++i) {
+		JSONObject city = cityList.getJSONObject(i);
+
+		String name = city.getString("name");
+		float[] topLeftCoordinate = 
+			{city.getFloat("tlcLat"), city.getFloat("tlcLon")};
+		float[] bottomRightCoordinate = 
+			{city.getFloat("brcLat"), city.getFloat("brcLon")};
+
+		println(name + ", " + topLeftCoordinate[0] + ", " + topLeftCoordinate[1] 
+			+ ", " + bottomRightCoordinate[0] + ", " + bottomRightCoordinate[1]);
+
+		cities.add(new City(name, topLeftCoordinate, bottomRightCoordinate));
+	}
+
+	if (screenFSM == 1) {
 		drawCitiesDropDown();
 	}
 }
 
 void draw() {
-	if (fsm == 1) {
+	if (screenFSM == 1) {
 		drawSelectionScreen();
 	}
 	if (debugColors) {
 		drawPalette();
+	}
+}
+
+void controlEvent(ControlEvent theEvent) {
+	if (theEvent.isGroup()) {
+		mapFSM = int(theEvent.getGroup().getValue());
+		println("event from group : "+theEvent.getGroup().getValue()+" from "
+			+theEvent.getGroup());
+	}
+	else {
+		print("control event from : "+theEvent.controller().name());
+   		println(", value : "+theEvent.controller().value());
 	}
 }
 
@@ -64,14 +100,19 @@ void drawCitiesDropDown() {
 	PFont p = createFont("Proxima Nova", 24);
 	cp5.setControlFont(p);
 	citiesDropDown = cp5.addDropdownList("Select City").setPosition(50,100);
-	for (int i=0;i<40;i++) {
-    	citiesDropDown.addItem("item "+i, i);
+	citiesDropDown.toUpperCase(false);
+	for (int i=0;i<cities.size();i++) {
+    	City city = cities.get(i);
+
+    	citiesDropDown.addItem(city.name, i);
 	}
-	citiesDropDown.setItemHeight(24);
+	citiesDropDown.setItemHeight(28);
 	citiesDropDown.setBarHeight(36);
 	citiesDropDown.setWidth(350);
 	citiesDropDown.setBackgroundColor(paletteArray[2]);
 	citiesDropDown.setColorBackground(paletteArray[3]);
+	citiesDropDown.setColorActive(paletteArray[0]);
+	citiesDropDown.setColorForeground(paletteArray[4]);
 }
 
 void drawMap() {
@@ -80,16 +121,32 @@ void drawMap() {
 	int x2 = 1150;
 	int y2 = 550;
 
-	fill(162);
-	rectMode(CORNERS);
-	rect(x1, y1, x2, y2);
-	line(x1, y1, x2, y2);
-	line(x1, y2, x2, y1);
+	if (mapFSM == -1) {
+		if (debugPlaceholders) {
+			fill(162);
+			rectMode(CORNERS);
+			rect(x1, y1, x2, y2);
+			line(x1, y1, x2, y2);
+			line(x1, y2, x2, y1);
 
-	fill(0);
-	textSize(32);
-	textAlign(CENTER, CENTER);
-	text("MAP", averageInt(x1, x2), averageInt(y1, y2));
+			fill(0);
+			textSize(32);
+			textAlign(CENTER, CENTER);
+			text("MAP", averageInt(x1, x2), averageInt(y1, y2));
+		}
+		else {
+			String url = "http://maps.googleapis.com/maps/api/staticmap"
+			+ "?center=Atlantic+Ocean&zoom=1"
+			+ "&size=" + str(x2-x1) +"x" + str(y2-y1)
+			+ "&maptype=roadmap&sensor=false";
+
+			if (!mapImageLoaded) {
+				mapImage = loadImage(url, "png");
+			}
+			imageMode(CORNERS);
+			image(mapImage, x1, y1, x2, y2);
+		}
+	}
 }
 
 void drawPalette() {
@@ -115,10 +172,12 @@ int averageInt(int... numbers) {
 class City {
 	// Initialize variables
 	String name;
-	float tlCoords, brCoords, centerCoords;
+	float [] tlCoords = new float[2];
+	float [] brCoords = new float[2];
+	float [] centerCoords = new float[2];
 
 	// Constructor
-	City (String n, float tlc, float brc) {
+	City (String n, float [] tlc, float [] brc) {
 		name = n;
 		tlCoords = tlc;
 		brCoords = brc;
