@@ -1,0 +1,23 @@
+[
+	{
+		"name": "San Diego",
+		"tlcLat": 32.804410 ,
+		"tlcLon" : -117.261887,
+		"brcLat": 32.620689, 
+		"brcLon": -116.999588
+	},
+	{
+		"name": "Sacramento",
+		"tlcLat": 38.644596,
+		"tlcLon": -121.58844,
+		"brcLat": 38.496426,
+		"brcLon": -121.356354
+	},
+	{
+		"name": "Los Angeles",
+		"tlcLat": 34.13646, 
+		"tlcLon": -118.498535,
+		"brcLat": 33.793674,
+		"brcLon": -117.970691
+	}
+]
