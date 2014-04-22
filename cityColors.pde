@@ -2,6 +2,8 @@ import controlP5.*;
 
 ControlP5 cp5;
 DropdownList citiesDropDown;
+Textarea mapTextArea;
+Button mapButton;
 
 JSONArray cityList;
 
@@ -28,6 +30,7 @@ String picturesDirectory = "pictures";
 //----------------------------  Main Functions  ------------------------------//
 
 void setup() {
+	cp5 = new ControlP5(this);
 	size(1200, 700);
 	
 	// Check for directory existence
@@ -50,7 +53,9 @@ void setup() {
 	}
 
 	if (screenFSM == 1) {
+		drawMapText();
 		drawCitiesDropDown();
+		drawMapButton();
 	}
 }
 
@@ -65,10 +70,10 @@ void draw() {
 
 void controlEvent(ControlEvent theEvent) {
 	if (theEvent.isGroup()) {
-		mapImageLoaded = false;
-		mapFSM = int(theEvent.getGroup().getValue());
-		println("event from group : "+theEvent.getGroup().getValue()+" from "
-			+theEvent.getGroup());
+		if (theEvent.group().name()=="Select City") {
+			mapImageLoaded = false;
+			mapFSM = int(theEvent.getGroup().getValue());
+		}
 	}
 	else {
 		print("control event from : "+theEvent.controller().name());
@@ -90,11 +95,10 @@ boolean checkDirectoryExistence(String directoryName) {
 
 void drawSelectionScreen() {
 	background(palette2);
-	drawMap();
+	updateMap();
 }
 
 void drawCitiesDropDown() {
-	cp5 = new ControlP5(this);
 	PFont p = createFont("Proxima Nova", 24);
 	cp5.setControlFont(p);
 	citiesDropDown = cp5.addDropdownList("Select City").setPosition(50,100);
@@ -113,7 +117,7 @@ void drawCitiesDropDown() {
 	citiesDropDown.setColorForeground(paletteArray[4]);
 }
 
-void drawMap() {
+void updateMap() {
 	int x1 = 450;
 	int y1 = 50;
 	int x2 = 1150;
@@ -145,8 +149,11 @@ void drawMap() {
 			imageMode(CORNERS);
 			image(mapImage, x1, y1, x2, y2);
 		}
+
+		mapTextArea.setText("Please select a city");
 	}
 	else {
+		String boxText;
 		City city = cities.get(mapFSM);
 
 		String url = "http://maps.googleapis.com/maps/api/staticmap"
@@ -173,7 +180,63 @@ void drawMap() {
 		}
 		imageMode(CORNERS);
 		image(mapImage, x1, y1, x2, y2);
+	
+		boxText = city.name + ":" + "\n"
+		+ "\n"
+		+ "Latitude: " + str(city.getCenterLat()) + "\n"
+		+ "Longitude: " + str(city.getCenterLon()) + "\n"
+		+ "\n"
+		+ "Top-Left Coordinates: " + str(city.tlCoords[0]) 
+		+ ", " + str(city.tlCoords[1]) + "\n"
+		+ "\n"
+		+ "Bottom-Right Coordinates: " + str(city.brCoords[0])
+		+ ", " + str(city.brCoords[1])
+		;
+
+		mapTextArea.setText(boxText);
 	}
+}
+
+void drawMapText() {
+	String boxText;
+
+	if (mapFSM == -1) {
+		boxText = "Please choose a city to begin.";
+	}
+	else {
+		City city = cities.get(mapFSM);
+
+		boxText = city.name + ":\n\n"
+		+ "Latitude: " + str(city.centerCoords[0])
+		+ "Longitude: " + str(city.centerCoords[1])
+		;
+	}
+
+	mapTextArea = cp5.addTextarea("mapText")
+	.setPosition(50,125)
+	.setSize(350,412)
+	.setFont(createFont("Proxima Nova", 24))
+	.setColor(255)
+	.setColorBackground(paletteArray[2])
+	.setColorForeground(paletteArray[1])
+	;
+}
+
+void drawMapButton() {
+	PFont p = createFont("Proxima Nova", 24);
+	cp5.setControlFont(p);
+
+	mapButton = cp5.addButton("mapButton")
+	.setPosition(75,575)
+	.setHeight(75)
+	.setWidth(300)
+	.setCaptionLabel("Generate Image")
+	.setColorBackground(paletteArray[0])
+	.setColorForeground(paletteArray[3])
+	.setColorActive(paletteArray[4])
+	.align(ControlP5.CENTER, ControlP5.CENTER, 
+		ControlP5.CENTER, ControlP5.CENTER)
+	;
 }
 
 void drawPalette() {
