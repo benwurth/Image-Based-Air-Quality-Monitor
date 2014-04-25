@@ -57,11 +57,20 @@ void setup() {
 		drawCitiesDropDown();
 		drawMapButton();
 	}
+	else if (screenFSM == 2) {
+		// drawProcessedImage();
+		// drawProgressBar();
+		// drawCurrentLoadedImage();
+		// drawPixel();
+		// drawPixelData();
+	}
 }
 
 void draw() {
+	background(palette2);
+
 	if (screenFSM == 1) {
-		drawSelectionScreen();
+		updateMap();
 	}
 	if (debugColors) {
 		drawPalette();
@@ -76,8 +85,14 @@ void controlEvent(ControlEvent theEvent) {
 		}
 	}
 	else {
-		print("control event from : "+theEvent.controller().name());
-   		println(", value : "+theEvent.controller().value());
+		if (theEvent.controller().name()=="mapButton") {
+			windowSwitcher(2);
+		}
+		else {
+			print("control event from : "+theEvent.controller().name());
+   			println(", value : "+theEvent.controller().value());
+		}
+		
 	}
 }
 
@@ -91,11 +106,6 @@ boolean checkDirectoryExistence(String directoryName) {
 	else {
 		return false;
 	}
-}
-
-void drawSelectionScreen() {
-	background(palette2);
-	updateMap();
 }
 
 void drawCitiesDropDown() {
@@ -244,6 +254,21 @@ void drawPalette() {
 		fill(paletteArray[i]);
 		rectMode(CORNER);
 		rect(10*i, 0, 10, 10);
+	}
+}
+
+void windowSwitcher(int windowState) {
+	if (windowState == 1) {
+		screenFSM = 1;
+	}
+	else if (windowState == 2) {
+		screenFSM = 2;
+		citiesDropDown.setVisible(false);
+		mapButton.setVisible(false);
+		mapTextArea.setVisible(false);
+	}
+	else if (windowState == 3) {
+		screenFSM = 3;
 	}
 }
 
