@@ -3,7 +3,11 @@ import controlP5.*;
 ControlP5 cp5;
 DropdownList citiesDropDown;
 Textarea mapTextArea;
+Textarea pixelData;
 Button mapButton;
+Slider progressBar;
+
+// color debugGrey = new color(162);
 
 JSONArray cityList;
 
@@ -19,11 +23,12 @@ color[] paletteArray = {palette1, palette2, palette3, palette4, palette5};
 PImage mapImage;
 boolean mapImageLoaded = false;
 
-boolean debugColors = true;
+boolean debugColors = false;
 boolean debugPlaceholders = false;
 
 int screenFSM = 1;
 int mapFSM = -1;
+int progressBarValue = 0;
 
 String picturesDirectory = "pictures";
 
@@ -52,18 +57,15 @@ void setup() {
 		cities.add(new City(name, topLeftCoordinate, bottomRightCoordinate));
 	}
 
-	if (screenFSM == 1) {
-		drawMapText();
-		drawCitiesDropDown();
-		drawMapButton();
-	}
-	else if (screenFSM == 2) {
-		// drawProcessedImage();
-		// drawProgressBar();
-		// drawCurrentLoadedImage();
-		// drawPixel();
-		// drawPixelData();
-	}
+
+	setupMapText();
+	setupCitiesDropDown();
+	setupMapButton();
+
+	setupProgressBar();
+	setupPixelData();
+	
+	windowSwitcher(1);
 }
 
 void draw() {
@@ -71,6 +73,11 @@ void draw() {
 
 	if (screenFSM == 1) {
 		updateMap();
+	}
+	else if (screenFSM == 2) {
+		drawProcessedImage();
+		drawCurrentLoadedImage();
+		drawPixelSwatch();
 	}
 	if (debugColors) {
 		drawPalette();
@@ -108,7 +115,32 @@ boolean checkDirectoryExistence(String directoryName) {
 	}
 }
 
-void drawCitiesDropDown() {
+void windowSwitcher(int windowState) {
+	if (windowState == 1) {
+		screenFSM = 1;
+		
+		citiesDropDown.setVisible(true);
+		mapButton.setVisible(true);
+		mapTextArea.setVisible(true);
+
+		progressBar.setVisible(false);
+		pixelData.setVisible(false);
+	}
+	else if (windowState == 2) {
+		screenFSM = 2;
+		citiesDropDown.setVisible(false);
+		mapButton.setVisible(false);
+		mapTextArea.setVisible(false);
+
+		progressBar.setVisible(true);
+		pixelData.setVisible(true);
+	}
+	else if (windowState == 3) {
+		screenFSM = 3;
+	}
+}
+
+void setupCitiesDropDown() {
 	PFont p = createFont("Proxima Nova", 24);
 	cp5.setControlFont(p);
 	citiesDropDown = cp5.addDropdownList("Select City").setPosition(50,100);
@@ -207,7 +239,7 @@ void updateMap() {
 	}
 }
 
-void drawMapText() {
+void setupMapText() {
 	String boxText;
 
 	if (mapFSM == -1) {
@@ -232,7 +264,7 @@ void drawMapText() {
 	;
 }
 
-void drawMapButton() {
+void setupMapButton() {
 	PFont p = createFont("Proxima Nova", 24);
 	cp5.setControlFont(p);
 
@@ -257,19 +289,60 @@ void drawPalette() {
 	}
 }
 
-void windowSwitcher(int windowState) {
-	if (windowState == 1) {
-		screenFSM = 1;
-	}
-	else if (windowState == 2) {
-		screenFSM = 2;
-		citiesDropDown.setVisible(false);
-		mapButton.setVisible(false);
-		mapTextArea.setVisible(false);
-	}
-	else if (windowState == 3) {
-		screenFSM = 3;
-	}
+void drawProcessedImage() {
+	int x1 = 50;
+	int y1 = 50;
+	int x2 = x1 + 512;
+	int y2 = y1 + 512;
+	rectMode(CORNERS);
+	fill(162);
+	rect(x1, y1, x2, y2);
+}
+
+void drawCurrentLoadedImage() {
+	int x1 = 50 + 512 + 50;
+	int y1 = 50;
+	int x2 = x1 + 512;
+	int y2 = y1 + 512;
+	rectMode(CORNERS);
+	fill(255);
+	rect(x1, y1, x2, y2);
+}
+
+void setupProgressBar() {
+	progressBar = cp5.addSlider("progressBarValue")
+	.setPosition(50, 600)
+	.setRange(0, 100)
+	.setSize(512, 30)
+	.setLabelVisible(false)
+	;
+
+	cp5.getController("progressBarValue").getValueLabel().hide();
+}
+
+void setupPixelData() {
+	int margin = 10;
+
+	String boxText = "Pixel Data Goes Here";
+
+	pixelData = cp5.addTextarea("pixelData")
+	.setPosition(50 + 512 + 50 + 100 + margin, 50 + 512 + 20)
+	.setSize(512 - 100 - margin, 100)
+	.setFont(createFont("Proxima Nova", 24))
+	.setColor(255)
+	.setColorBackground(paletteArray[2])
+	.setColorForeground(paletteArray[1])
+	.setText(boxText);
+	;
+}
+
+void drawPixelSwatch() {
+	int x1 = 50 + 512 + 50;
+	int y1 = 50 + 512 + 20;
+	int x2 = x1 + 100;
+	int y2 = y1 + 100;
+	fill(162);
+	rect(x1, y1, x2, y2);
 }
 
 int averageInt(int... numbers) {
