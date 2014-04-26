@@ -144,7 +144,6 @@ void windowSwitcher(int windowState) {
 		pixelData.setVisible(false);
 	}
 	else if (windowState == 2) {
-		// initializeDigitalClaude();
 		screenFSM = 2;
 		citiesDropDown.setVisible(false);
 		mapButton.setVisible(false);
@@ -409,119 +408,6 @@ boolean checkPhotoExistence(int photoID) {
 	}
 
 	return false;
-}
-
-void initializeDigitalClaude() {
-	city = cities.get(mapFSM);
-
-	int photosDownloaded = 0;
-	int remainingPhotos = numberOfPictures - checkFolderSize(city);
-	int startPhoto = 0;
-
-	// while (photoCount < numberOfPictures) {
-
-	// 	println("remainingPhotos: " + str(remainingPhotos));
-	// 	println("startPhoto: " + str(startPhoto));
-	// 	if (remainingPhotos < 100) {
-	// 		int maxNumber = startPhoto + remainingPhotos;
-	// 		JSONArray response;
-	// 		response = panoramioGetter(city, maxNumber, startPhoto);
-	// 		startPhoto = maxNumber;
-
-	// 		for (int i = 0; i < response.size(); ++i) {
-	// 			PImage downloadedPhoto;
-	// 			String imageUrl = response.getJSONObject(i)
-	// 				.getString("photo_file_url");
-	// 			int imageID = response.getJSONObject(i).getInt("photo_id");
-	// 			downloadedPhoto = loadImage(imageUrl);
-
-	// 			boolean downloadResult = downloadedPhoto
-	// 				.save(path + "/" + str(imageID) + ".jpg");
-	// 			photoCount++;
-	// 			remainingPhotos = numberOfPictures - photoCount;
-	// 			if (downloadResult) {
-	// 				photosDownloaded++;
-	// 				println("Photos Downloaded: " + str(photosDownloaded));
-	// 			}
-	// 		}
-	// 	}
-	// 	else {
-	// 		JSONArray response;
-	// 		response = panoramioGetter(city, startPhoto + 100, startPhoto);
-	// 		startPhoto = startPhoto + 100;
-
-	// 		for (int i = 0; i < response.size(); ++i) {
-	// 			PImage downloadedPhoto;
-	// 			String imageUrl = response.getJSONObject(i)
-	// 				.getString("photo_file_url");
-	// 			int imageID = response.getJSONObject(i).getInt("photo_id");
-	// 			downloadedPhoto = loadImage(imageUrl);
-
-	// 			boolean downloadResult = downloadedPhoto
-	// 				.save(path + "/" + str(imageID) + ".jpg");
-	// 			photoCount++;
-	// 			remainingPhotos = numberOfPictures - photoCount;
-	// 			if (downloadResult) {
-	// 				photosDownloaded++;
-	// 				println("Photos Downloaded: " + str(photosDownloaded));
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// while (remainingPhotos > 0) {
-	// 	JSONArray response;
-	// 	int photoRemainder = remainingPhotos % 100;
-	// 	int photoWhole = remainingPhotos - photoRemainder;
-	// 	println("photoRemainder: " + str(photoRemainder));
-
-	// 	if (photoRemainder != 0) {
-	// 		response = panoramioGetter(city, remainingPhotos, photoWhole);
-
-	// 		for (int i = 0; i < response.size(); ++i) {
-	// 			// println("response.getJSONObject(i): "+response.getJSONObject(i));
-
-	// 			panoResponses.setJSONObject(panoResponses.size(), 
-	// 				response.getJSONObject(i));
-	// 			startPhoto++;
-	// 			remainingPhotos--;
-	// 		}
-	// 	}
-	// 	else if (photoRemainder == 0) {
-	// 		response = panoramioGetter(city, remainingPhotos, remainingPhotos - 100);
-
-	// 		for (int i = 0; i < response.size(); ++i) {
-	// 			panoResponses.setJSONObject(panoResponses.size(),
-	// 				response.getJSONObject(i));
-	// 			startPhoto++;
-	// 			remainingPhotos--;
-	// 		}
-	// 	}
-	// }
-	// // println("panoResponses: " + panoResponses);
-
-	// for (int i = 0; i < panoResponses.size(); ++i) {
-	// 	PImage downloadedPhoto;
-	// 	String imageUrl = panoResponses.getJSONObject(i)
-	// 		.getString("photo_file_url");
-	// 	int imageID = panoResponses.getJSONObject(i).getInt("photo_id");
-	// 	downloadedPhoto = loadImage(imageUrl);
-
-	// 	boolean downloadResult = downloadedPhoto
-	// 		.save(path + "/" + str(imageID) + ".jpg");
-	// 	print("Downloading Photo: " + str(imageID) + ", photo number " + str(i+1) + "\r");
-	// }
-	
-
-
-	// while (remainingPhotos > 0) {
-	// 	JSONArray response;
-	// 	remainingPhotos = numberOfPictures - checkFolderSize(city);
-	// 	response = panoramioGetter(city, startPhoto + 100, startPhoto);
-	// 	startPhoto += 100;
-
-
-	// }
 }
 
 void digitalClaude() {
