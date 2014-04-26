@@ -1,4 +1,5 @@
 import controlP5.*;
+import java.io.*;
 
 ControlP5 cp5;
 DropdownList citiesDropDown;
@@ -10,8 +11,16 @@ Slider progressBar;
 // color debugGrey = new color(162);
 
 JSONArray cityList;
+JSONArray photoList;
+JSONArray panoResponses;
+JSONArray panoArray;
+JSONObject panoramioResponse;
+
+City city;
 
 ArrayList<City> cities;
+
+ArrayList<File> downloadedImages;
 
 color palette1 = #6DC6A8;
 color palette2 = #EDD07D;
@@ -28,18 +37,24 @@ boolean debugPlaceholders = false;
 
 int screenFSM = 1;
 int mapFSM = -1;
+int claudeFSM = 1;
 int progressBarValue = 0;
+int numberOfPictures = 1024;
+int pictureRemainder;
+int currentPhoto = 0;
 
-String picturesDirectory = "pictures";
+String picturesDirectory = "/Users/feanor93/Documents/cityColors/data/pictures";
 
 //----------------------------  Main Functions  ------------------------------//
 
 void setup() {
 	cp5 = new ControlP5(this);
 	size(1200, 700);
+
+	panoResponses = new JSONArray();
 	
 	// Check for directory existence
-	createOutput(picturesDirectory);
+	println(checkDirectoryExistence(picturesDirectory));
 
 	// Load city information
 	cities = new ArrayList<City>();
@@ -75,6 +90,7 @@ void draw() {
 		updateMap();
 	}
 	else if (screenFSM == 2) {
+		digitalClaude();
 		drawProcessedImage();
 		drawCurrentLoadedImage();
 		drawPixelSwatch();
@@ -92,7 +108,8 @@ void controlEvent(ControlEvent theEvent) {
 		}
 	}
 	else {
-		if (theEvent.controller().name()=="mapButton") {
+		if (theEvent.controller().name()=="mapButton" && mapFSM >= 0) {
+			// println(mapFSM);
 			windowSwitcher(2);
 		}
 		else {
@@ -111,7 +128,7 @@ boolean checkDirectoryExistence(String directoryName) {
 		return true;
 	}
 	else {
-		return false;
+		return f.mkdir();
 	}
 }
 
@@ -127,6 +144,7 @@ void windowSwitcher(int windowState) {
 		pixelData.setVisible(false);
 	}
 	else if (windowState == 2) {
+		// initializeDigitalClaude();
 		screenFSM = 2;
 		citiesDropDown.setVisible(false);
 		mapButton.setVisible(false);
@@ -146,7 +164,7 @@ void setupCitiesDropDown() {
 	citiesDropDown = cp5.addDropdownList("Select City").setPosition(50,100);
 	citiesDropDown.toUpperCase(false);
 	for (int i=0;i<cities.size();i++) {
-    	City city = cities.get(i);
+    	city = cities.get(i);
 
     	citiesDropDown.addItem(city.name, i);
 	}
@@ -196,7 +214,7 @@ void updateMap() {
 	}
 	else {
 		String boxText;
-		City city = cities.get(mapFSM);
+		city = cities.get(mapFSM);
 
 		String url = "http://maps.googleapis.com/maps/api/staticmap"
 		+ "?center=" + str(city.getCenterLat()) + "," + str(city.getCenterLon())
@@ -246,7 +264,7 @@ void setupMapText() {
 		boxText = "Please choose a city to begin.";
 	}
 	else {
-		City city = cities.get(mapFSM);
+		city = cities.get(mapFSM);
 
 		boxText = city.name + ":\n\n"
 		+ "Latitude: " + str(city.centerCoords[0])
@@ -343,6 +361,230 @@ void drawPixelSwatch() {
 	int y2 = y1 + 100;
 	fill(162);
 	rect(x1, y1, x2, y2);
+}
+
+int checkFolderSize(City city) {
+	File folder;
+	int photoCount;
+	String path = picturesDirectory + "/" + city.name;
+	checkDirectoryExistence(path);
+	folder = new File(dataPath(path));
+	java.io.FilenameFilter jpgFilter = new java.io.FilenameFilter() {
+ 			public boolean accept(File dir, String name) {
+   			return name.toLowerCase().endsWith(".jpg");
+		}
+	};
+
+	String[] filenames = folder.list(jpgFilter);
+
+	println(filenames.length + " '.jpg' files in directory.");
+
+	// for (int i = 0; i < filenames.length; i++) {
+	// 	println(filenames[i]);
+	// }
+
+	photoCount = filenames.length;
+	return photoCount;
+}
+
+boolean checkPhotoExistence(int photoID) {
+	String filename = str(photoID) + ".jpg";
+	File folder;
+	String path = picturesDirectory + "/" + city.name;
+	folder = new File(dataPath(path));
+
+	java.io.FilenameFilter jpgFilter = new java.io.FilenameFilter() {
+ 			public boolean accept(File dir, String name) {
+   			return name.toLowerCase().endsWith(".jpg");
+		}
+	};
+
+	String[] filenames = folder.list(jpgFilter);
+
+	for (int i = 0; i < filenames.length; ++i) {
+		if (filenames[i].equals(filename)) {
+			print("We have a match!");
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void initializeDigitalClaude() {
+	city = cities.get(mapFSM);
+
+	int photosDownloaded = 0;
+	int remainingPhotos = numberOfPictures - checkFolderSize(city);
+	int startPhoto = 0;
+
+	// while (photoCount < numberOfPictures) {
+
+	// 	println("remainingPhotos: " + str(remainingPhotos));
+	// 	println("startPhoto: " + str(startPhoto));
+	// 	if (remainingPhotos < 100) {
+	// 		int maxNumber = startPhoto + remainingPhotos;
+	// 		JSONArray response;
+	// 		response = panoramioGetter(city, maxNumber, startPhoto);
+	// 		startPhoto = maxNumber;
+
+	// 		for (int i = 0; i < response.size(); ++i) {
+	// 			PImage downloadedPhoto;
+	// 			String imageUrl = response.getJSONObject(i)
+	// 				.getString("photo_file_url");
+	// 			int imageID = response.getJSONObject(i).getInt("photo_id");
+	// 			downloadedPhoto = loadImage(imageUrl);
+
+	// 			boolean downloadResult = downloadedPhoto
+	// 				.save(path + "/" + str(imageID) + ".jpg");
+	// 			photoCount++;
+	// 			remainingPhotos = numberOfPictures - photoCount;
+	// 			if (downloadResult) {
+	// 				photosDownloaded++;
+	// 				println("Photos Downloaded: " + str(photosDownloaded));
+	// 			}
+	// 		}
+	// 	}
+	// 	else {
+	// 		JSONArray response;
+	// 		response = panoramioGetter(city, startPhoto + 100, startPhoto);
+	// 		startPhoto = startPhoto + 100;
+
+	// 		for (int i = 0; i < response.size(); ++i) {
+	// 			PImage downloadedPhoto;
+	// 			String imageUrl = response.getJSONObject(i)
+	// 				.getString("photo_file_url");
+	// 			int imageID = response.getJSONObject(i).getInt("photo_id");
+	// 			downloadedPhoto = loadImage(imageUrl);
+
+	// 			boolean downloadResult = downloadedPhoto
+	// 				.save(path + "/" + str(imageID) + ".jpg");
+	// 			photoCount++;
+	// 			remainingPhotos = numberOfPictures - photoCount;
+	// 			if (downloadResult) {
+	// 				photosDownloaded++;
+	// 				println("Photos Downloaded: " + str(photosDownloaded));
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	// while (remainingPhotos > 0) {
+	// 	JSONArray response;
+	// 	int photoRemainder = remainingPhotos % 100;
+	// 	int photoWhole = remainingPhotos - photoRemainder;
+	// 	println("photoRemainder: " + str(photoRemainder));
+
+	// 	if (photoRemainder != 0) {
+	// 		response = panoramioGetter(city, remainingPhotos, photoWhole);
+
+	// 		for (int i = 0; i < response.size(); ++i) {
+	// 			// println("response.getJSONObject(i): "+response.getJSONObject(i));
+
+	// 			panoResponses.setJSONObject(panoResponses.size(), 
+	// 				response.getJSONObject(i));
+	// 			startPhoto++;
+	// 			remainingPhotos--;
+	// 		}
+	// 	}
+	// 	else if (photoRemainder == 0) {
+	// 		response = panoramioGetter(city, remainingPhotos, remainingPhotos - 100);
+
+	// 		for (int i = 0; i < response.size(); ++i) {
+	// 			panoResponses.setJSONObject(panoResponses.size(),
+	// 				response.getJSONObject(i));
+	// 			startPhoto++;
+	// 			remainingPhotos--;
+	// 		}
+	// 	}
+	// }
+	// // println("panoResponses: " + panoResponses);
+
+	// for (int i = 0; i < panoResponses.size(); ++i) {
+	// 	PImage downloadedPhoto;
+	// 	String imageUrl = panoResponses.getJSONObject(i)
+	// 		.getString("photo_file_url");
+	// 	int imageID = panoResponses.getJSONObject(i).getInt("photo_id");
+	// 	downloadedPhoto = loadImage(imageUrl);
+
+	// 	boolean downloadResult = downloadedPhoto
+	// 		.save(path + "/" + str(imageID) + ".jpg");
+	// 	print("Downloading Photo: " + str(imageID) + ", photo number " + str(i+1) + "\r");
+	// }
+	
+
+
+	// while (remainingPhotos > 0) {
+	// 	JSONArray response;
+	// 	remainingPhotos = numberOfPictures - checkFolderSize(city);
+	// 	response = panoramioGetter(city, startPhoto + 100, startPhoto);
+	// 	startPhoto += 100;
+
+
+	// }
+}
+
+void digitalClaude() {
+	if (claudeFSM == 1) {
+		int totalPics = checkFolderSize(city);
+		int remainingPhotos = numberOfPictures - totalPics;
+		pictureRemainder = remainingPhotos % 100;
+		int photoWhole = remainingPhotos - pictureRemainder;
+
+		panoArray = panoramioGetter(city, totalPics+ 100, totalPics);
+
+		currentPhoto = 0;
+		claudeFSM = 2;
+	}
+	else if (claudeFSM == 2) {
+		int imageID = panoArray.getJSONObject(currentPhoto).getInt("photo_id");
+
+		if (!checkPhotoExistence(imageID)) {
+			String path = picturesDirectory + "/" + city.name;
+			String imageUrl = panoArray.getJSONObject(currentPhoto).getString("photo_file_url");
+			PImage downloadedPhoto = loadImage(imageUrl);
+			downloadedPhoto.save(path + "/" + str(imageID) + ".jpg");
+			print("Downloading Photo: " + str(imageID) + ", photo number " + str(currentPhoto+1) + "\r");
+			currentPhoto++;
+		}
+		else {
+			currentPhoto++;
+		}
+
+		if (checkFolderSize(city) == numberOfPictures) {
+			claudeFSM = 3;
+		}
+		else if (currentPhoto == panoArray.size()) {
+			claudeFSM = 1;
+		}
+	}
+	else if (claudeFSM == 3) {
+		println("All done downloading!");
+	}
+}
+
+JSONArray panoramioGetter(City city, int picMaxNumber, int picMinNumber) {
+	String picSize = "medium";
+
+	String url = "http://www.panoramio.com/map/get_panoramas.php"
+		+ "?set=public"
+		+ "&from=" + str(picMinNumber)
+		+ "&to=" + str(picMaxNumber)
+		+ "&minx=" + str(city.tlCoords[1])
+		+ "&miny=" + str(city.brCoords[0])
+		+ "&maxx=" + str(city.brCoords[1])
+		+ "&maxy=" + str(city.tlCoords[0])
+		+ "&size=" + picSize
+		+ "&mapfilter=true"
+		;
+
+	println(url);
+
+	panoramioResponse = loadJSONObject(url);
+	// println(panoramioResponse);
+	photoList = panoramioResponse.getJSONArray("photos");
+
+	return photoList;
 }
 
 int averageInt(int... numbers) {
