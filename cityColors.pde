@@ -30,6 +30,7 @@ color palette5 = #E55124;
 color[] paletteArray = {palette1, palette2, palette3, palette4, palette5};
 
 PImage mapImage;
+PImage currentlyLoadedImage = null;
 boolean mapImageLoaded = false;
 
 boolean debugColors = false;
@@ -91,9 +92,11 @@ void draw() {
 	}
 	else if (screenFSM == 2) {
 		digitalClaude();
-		drawProcessedImage();
-		drawCurrentLoadedImage();
 		drawPixelSwatch();
+		drawProcessedImage();
+		if (currentlyLoadedImage != null) {
+			drawCurrentLoadedImage();
+		}
 	}
 	if (debugColors) {
 		drawPalette();
@@ -113,8 +116,8 @@ void controlEvent(ControlEvent theEvent) {
 			windowSwitcher(2);
 		}
 		else {
-			print("control event from : "+theEvent.controller().name());
-   			println(", value : "+theEvent.controller().value());
+			// print("control event from : "+theEvent.controller().name());
+   			// println(", value : "+theEvent.controller().value());
 		}
 		
 	}
@@ -321,9 +324,56 @@ void drawCurrentLoadedImage() {
 	int y1 = 50;
 	int x2 = x1 + 512;
 	int y2 = y1 + 512;
+	int xc = (x1 + x2) / 2;
+	int yc = (y1 + y2) / 2;
 	rectMode(CORNERS);
 	fill(255);
-	rect(x1, y1, x2, y2);
+	// rect(x1, y1, x2, y2);
+	int imageHeight = currentlyLoadedImage.height;
+	int imageWidth = currentlyLoadedImage.width;
+	// println("imageHeight: "+imageHeight);
+	// println("imageWidth: "+imageWidth);
+	// if (imageWidth == imageHeight) {
+	// 	if (imageWidth > 512) {
+	// 		image(currentlyLoadedImage, x1, y1, 512, 512);
+	// 	}
+	// 	else {
+	// 		image(currentlyLoadedImage, xc-(imageWidth/2), yc-(imageWidth/2), 0, 0);
+	// 	}
+	// }
+	// else if (imageWidth > imageHeight) {
+	// 	if () {
+			
+	// 	}
+	// }
+	
+	imageMode(CENTER);
+
+	if (imageWidth < 512 && imageHeight < 512) {
+		println("Small");
+		image(currentlyLoadedImage, xc, yc);
+	}
+	else if (imageWidth == imageHeight) {
+		println("Square");
+		image(currentlyLoadedImage, xc, yc);
+	}
+	else if (imageWidth > imageHeight) {
+		println("Long");
+		int newHeight = 512 * imageHeight / imageWidth;
+		image(currentlyLoadedImage, xc, yc);
+	}
+	else {
+		println("Tall");
+		int newWidth = 512 * imageWidth / imageHeight;
+		image(currentlyLoadedImage, xc, yc);
+	}
+
+	float division = float(currentPhoto) / float(numberOfPictures);
+	progressBarValue = floor(division * 100);
+	println("currentPhoto: "+currentPhoto);
+	println("numberOfPictures: "+numberOfPictures);
+	println("division: "+division);
+	progressBar.setValue(progressBarValue);
 }
 
 void setupProgressBar() {
@@ -429,8 +479,9 @@ void digitalClaude() {
 			String path = picturesDirectory + "/" + city.name;
 			String imageUrl = panoArray.getJSONObject(currentPhoto).getString("photo_file_url");
 			PImage downloadedPhoto = loadImage(imageUrl);
+			currentlyLoadedImage = downloadedPhoto;
 			downloadedPhoto.save(path + "/" + str(imageID) + ".jpg");
-			print("Downloading Photo: " + str(imageID) + ", photo number " + str(currentPhoto+1) + "\r");
+			// println("Downloading Photo: " + str(imageID) + ", photo number " + str(currentPhoto+1) + "\r");
 			currentPhoto++;
 		}
 		else {
@@ -438,6 +489,7 @@ void digitalClaude() {
 		}
 
 		if (checkFolderSize(city) == numberOfPictures) {
+			println("All done downloading!");
 			claudeFSM = 3;
 		}
 		else if (currentPhoto == panoArray.size()) {
@@ -445,7 +497,7 @@ void digitalClaude() {
 		}
 	}
 	else if (claudeFSM == 3) {
-		println("All done downloading!");
+		
 	}
 }
 
@@ -464,7 +516,7 @@ JSONArray panoramioGetter(City city, int picMaxNumber, int picMinNumber) {
 		+ "&mapfilter=true"
 		;
 
-	println(url);
+	// println(url);
 
 	panoramioResponse = loadJSONObject(url);
 	// println(panoramioResponse);
