@@ -38,6 +38,8 @@ boolean mapImageLoaded = false;
 boolean debugColors = false;
 boolean debugPlaceholders = false;
 
+boolean folderChecked = false;
+
 int screenFSM = 1;
 int mapFSM = -1;
 int claudeFSM = 1;
@@ -46,7 +48,9 @@ int progressBarValue = 0;
 int numberOfPicturesToDownload = 1024;
 int downloadedImages;  
 int pictureRemainder;
-int currentPhoto = 0;
+int currentDownloadedPhoto = 0;
+int currentProcessedPhoto = 0;
+// Which window to boot on. Defualt is 1. Change for debugging.
 int startWindow = 1;
 
 String picturesDirectory = "/Users/feanor93/Documents/cityColors/data/pictures";
@@ -87,7 +91,6 @@ void setup() {
 		cities.add(new City(name, topLeftCoordinate, bottomRightCoordinate));
 	}
 
-
 	setupMapText();
 	setupCitiesDropDown();
 	setupMapButton();
@@ -98,10 +101,7 @@ void setup() {
 	setupInformationText();
 	setupSaveButton();
 	setupRestartButton();
-
-	// println("saveButton: "+saveButton);
 	
-	// Sets the beginning window. Default value is 1. Change for debugging.
 	windowSwitcher(startWindow);
 }
 
@@ -142,8 +142,26 @@ void controlEvent(ControlEvent theEvent) {
 		}
 		else if (theEvent.controller().name()=="saveButton") {
 			processedImage.save(city.name + "_" + 
-				str(numberOfPicturesToDownload) + "samples" + ".jpg");
+				str(numberOfPicturesToDownload) + "samples" + ".tiff");
+			println("Image Saved!");
 		}
+		else if (theEvent.controller().name()=="restartButton") {
+			windowSwitcher(1);
+			claudeFSM = 1;
+			processedImage = null;
+			currentlyLoadedImage = null;
+			currentDownloadedPhoto = 0;
+			currentProcessedPhoto = 0;
+			folderChecked = false;
+
+			processedImage = createImage(floor(sqrt(numberOfPicturesToDownload)), 
+				floor(sqrt(numberOfPicturesToDownload)), RGB);
+			processedImage.loadPixels();
+			for (int i = 0; i < processedImage.pixels.length; ++i) {
+				processedImage.pixels[i] = color(162);
+			}
+			processedImage.updatePixels();
+				}
 		else {
 			// print("control event from : "+theEvent.controller().name());
    			// println(", value : "+theEvent.controller().value());
@@ -421,9 +439,10 @@ void drawCurrentLoadedImage() {
 
 	// getImageAverage(currentlyLoadedImage);
 
-	float division = float(downloadedImages) / float(numberOfPicturesToDownload);
+	float division = float(currentProcessedPhoto) 
+		/ float(numberOfPicturesToDownload);
 	progressBarValue = floor(division * 100);
-	// println("currentPhoto: "+currentPhoto);
+	// println("currentDownloadedPhoto: "+currentDownloadedPhoto);
 	// println("numberOfPicturesToDownload: "+numberOfPicturesToDownload);
 	// println("division: "+division);
 	progressBar.setValue(progressBarValue);
@@ -536,9 +555,9 @@ void drawPixelSwatch() {
 	// Draws average color as a pixel on the processed image
 	// (This functionality should probably be moved elsewhere)
 	processedImage.loadPixels();
-	if (downloadedImages < processedImage.pixels.length) {
-		println("downloadedImages: "+downloadedImages);
-		processedImage.pixels[downloadedImages - 1] = averageColor;
+	if (currentProcessedPhoto < processedImage.pixels.length) {
+		println("currentProcessedPhoto: "+currentProcessedPhoto);
+		processedImage.pixels[currentProcessedPhoto - 1] = averageColor;
 	}
 	processedImage.updatePixels();
 }
@@ -610,35 +629,77 @@ void digitalClaude() {
 
 		panoArray = panoramioGetter(city, totalPics+ 100, totalPics);
 
-		currentPhoto = 0;
-		claudeFSM = 2;
+		currentDownloadedPhoto = 0;
+		if (!folderChecked) {
+			claudeFSM = 2;
+		}
+		else {
+			claudeFSM = 3;
+		}
 	}
 	else if (claudeFSM == 2) {
-		int imageID = panoArray.getJSONObject(currentPhoto).getInt("photo_id");
+		folderChecked = true;
+
+		int totalPics = checkFolderSize(city);
+
+		if (currentProcessedPhoto < totalPics 
+			&& currentProcessedPhoto < numberOfPicturesToDownload
+			&& totalPics > currentProcessedPhoto) {
+
+			// int photoID = panoArray.getJSONObject(currentDownloadedPhoto)
+			// 	.getInt("photo_id");
+			// String filename = str(photoID) + ".jpg";
+			File folder;
+			String path = picturesDirectory + "/" + city.name;
+			folder = new File(dataPath(path));
+
+			java.io.FilenameFilter jpgFilter = new java.io.FilenameFilter() {
+		 			public boolean accept(File dir, String name) {
+		   			return name.toLowerCase().endsWith(".jpg");
+				}
+			};
+
+			String[] filenames = folder.list(jpgFilter);
+
+			println("filenames[currentProcessedPhoto]: "+filenames[currentProcessedPhoto]);
+			currentlyLoadedImage = loadImage(picturesDirectory 
+				+ "/" + city.name + "/" + filenames[currentProcessedPhoto]);
+			currentProcessedPhoto++;
+		}
+		else if (currentProcessedPhoto >= totalPics) {
+			claudeFSM = 3;
+		}
+		else if (currentProcessedPhoto >= numberOfPicturesToDownload) {
+			claudeFSM = 4;
+		}
+	}
+	else if (claudeFSM == 3) {
+		int imageID = panoArray.getJSONObject(currentDownloadedPhoto).getInt("photo_id");
 
 		if (!checkPhotoExistence(imageID)) {
 			String path = picturesDirectory + "/" + city.name;
-			String imageUrl = panoArray.getJSONObject(currentPhoto)
+			String imageUrl = panoArray.getJSONObject(currentDownloadedPhoto)
 				.getString("photo_file_url");
 			PImage downloadedPhoto = loadImage(imageUrl);
 			currentlyLoadedImage = downloadedPhoto;
 			downloadedPhoto.save(path + "/" + str(imageID) + ".jpg");
-			// println("Downloading Photo: " + str(imageID) + ", photo number " + str(currentPhoto+1) + "\r");
-			currentPhoto++;
+			// println("Downloading Photo: " + str(imageID) + ", photo number " + str(currentDownloadedPhoto+1) + "\r");
+			currentDownloadedPhoto++;
+			currentProcessedPhoto++;
 		}
 		else {
-			currentPhoto++;
+			currentDownloadedPhoto++;
 		}
 
 		if (checkFolderSize(city) == numberOfPicturesToDownload) {
 			println("All done downloading!");
-			claudeFSM = 3;
+			claudeFSM = 4;
 		}
-		else if (currentPhoto == panoArray.size()) {
+		else if (currentDownloadedPhoto == panoArray.size()) {
 			claudeFSM = 1;
 		}
 	}
-	else if (claudeFSM == 3) {
+	else if (claudeFSM == 4) {
 		windowSwitcher(3);
 	}
 }
