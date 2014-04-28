@@ -44,9 +44,10 @@ int claudeFSM = 1;
 int progressBarValue = 0;
 // How many pictures to download and process. Change for debugging.
 int numberOfPicturesToDownload = 1024;
-int downloadedImages;
+int downloadedImages;  
 int pictureRemainder;
 int currentPhoto = 0;
+int startWindow = 1;
 
 String picturesDirectory = "/Users/feanor93/Documents/cityColors/data/pictures";
 
@@ -101,7 +102,7 @@ void setup() {
 	// println("saveButton: "+saveButton);
 	
 	// Sets the beginning window. Default value is 1. Change for debugging.
-	windowSwitcher(1);
+	windowSwitcher(startWindow);
 }
 
 void draw() {
@@ -120,6 +121,7 @@ void draw() {
 	}
 	else if (screenFSM == 3) {
 		drawFinalImage();
+		drawFinalPixelSwatch();
 	}
 	if (debugColors) {
 		drawPalette();
@@ -430,13 +432,21 @@ void drawCurrentLoadedImage() {
 void drawFinalImage() {
 	imageMode(CORNER);
 	image(processedImage, 572, 75, 512, 512);
+
+	color averageColor = getImageAverage(processedImage, false);
+
+	infoText.setText("Red: " + floor(red(averageColor)) + "\n"
+		+ "Green: " + floor(green(averageColor)) + "\n"
+		+ "Blue: " + floor(blue(averageColor)) + "\n\n"
+		+ "Hexadecimal: 0x" + hex(averageColor, 6))
+	;
 }
 
 void setupInformationText() {
 	int x1 = 100;
 	int y1 = 125;
 	int areaWidth = 350;
-	int areaHeight = 412;
+	int areaHeight = 300;
 
 	infoText = cp5.addTextarea("informationText")
 		.setPosition(x1, y1)
@@ -518,12 +528,28 @@ void drawPixelSwatch() {
 	fill(averageColor);
 	rect(x1, y1, x2, y2);
 
+	pixelData.setText("Red: " + floor(red(averageColor)) + "\n"
+		+ "Green: " + floor(green(averageColor)) + "\n"
+		+ "Blue: " + floor(blue(averageColor)))
+	;
+
+	// Draws average color as a pixel on the processed image
+	// (This functionality should probably be moved elsewhere)
 	processedImage.loadPixels();
 	if (downloadedImages < processedImage.pixels.length) {
 		println("downloadedImages: "+downloadedImages);
 		processedImage.pixels[downloadedImages - 1] = averageColor;
 	}
 	processedImage.updatePixels();
+}
+
+void drawFinalPixelSwatch() {
+	int x1 = 150;
+	int y1 = 500;
+
+	rectMode(CENTER);
+	fill(getImageAverage(processedImage, false));
+	rect(x1, y1, 100, 100);
 }
 
 int checkFolderSize(City city) {
