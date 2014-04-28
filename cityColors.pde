@@ -5,6 +5,7 @@ ControlP5 cp5;
 DropdownList citiesDropDown;
 Textarea mapTextArea;
 Textarea pixelData;
+Textarea infoText;
 Button mapButton;
 Slider progressBar;
 
@@ -20,8 +21,6 @@ City city;
 
 ArrayList<City> cities;
 
-ArrayList<File> downloadedImages;
-
 color palette1 = #6DC6A8;
 color palette2 = #EDD07D;
 color palette3 = #E1AF46;
@@ -31,6 +30,7 @@ color[] paletteArray = {palette1, palette2, palette3, palette4, palette5};
 
 PImage mapImage;
 PImage currentlyLoadedImage = null;
+PImage processedImage = null;
 boolean mapImageLoaded = false;
 
 boolean debugColors = false;
@@ -40,7 +40,8 @@ int screenFSM = 1;
 int mapFSM = -1;
 int claudeFSM = 1;
 int progressBarValue = 0;
-int numberOfPictures = 1024;
+int numberOfPicturesToDownload = 1024;
+int downloadedImages;
 int pictureRemainder;
 int currentPhoto = 0;
 
@@ -49,8 +50,17 @@ String picturesDirectory = "/Users/feanor93/Documents/cityColors/data/pictures";
 //----------------------------  Main Functions  ------------------------------//
 
 void setup() {
+	noSmooth();
 	cp5 = new ControlP5(this);
 	size(1200, 700);
+
+	processedImage = createImage(floor(sqrt(numberOfPicturesToDownload)), 
+		floor(sqrt(numberOfPicturesToDownload)), RGB);
+	processedImage.loadPixels();
+	for (int i = 0; i < processedImage.pixels.length; ++i) {
+		processedImage.pixels[i] = color(162);
+	}
+	processedImage.updatePixels();
 
 	panoResponses = new JSONArray();
 	
@@ -80,8 +90,13 @@ void setup() {
 
 	setupProgressBar();
 	setupPixelData();
+
+	setupInformationText();
+	setupSaveButton();
+	setupRestartButton();
 	
-	windowSwitcher(1);
+	// Sets the beginning window. Change for debugging.
+	windowSwitcher(3);
 }
 
 void draw() {
@@ -92,11 +107,14 @@ void draw() {
 	}
 	else if (screenFSM == 2) {
 		digitalClaude();
-		drawPixelSwatch();
-		drawProcessedImage();
 		if (currentlyLoadedImage != null) {
 			drawCurrentLoadedImage();
+			drawPixelSwatch();
 		}
+		drawProcessedImage();
+	}
+	else if (screenFSM == 3) {
+		drawFinalImage();
 	}
 	if (debugColors) {
 		drawPalette();
@@ -138,7 +156,7 @@ boolean checkDirectoryExistence(String directoryName) {
 void windowSwitcher(int windowState) {
 	if (windowState == 1) {
 		screenFSM = 1;
-		
+
 		citiesDropDown.setVisible(true);
 		mapButton.setVisible(true);
 		mapTextArea.setVisible(true);
@@ -148,6 +166,7 @@ void windowSwitcher(int windowState) {
 	}
 	else if (windowState == 2) {
 		screenFSM = 2;
+
 		citiesDropDown.setVisible(false);
 		mapButton.setVisible(false);
 		mapTextArea.setVisible(false);
@@ -157,6 +176,13 @@ void windowSwitcher(int windowState) {
 	}
 	else if (windowState == 3) {
 		screenFSM = 3;
+
+		citiesDropDown.setVisible(false);
+		mapButton.setVisible(false);
+		mapTextArea.setVisible(false);
+
+		progressBar.setVisible(false);
+		pixelData.setVisible(false);
 	}
 }
 
@@ -316,7 +342,9 @@ void drawProcessedImage() {
 	int y2 = y1 + 512;
 	rectMode(CORNERS);
 	fill(162);
-	rect(x1, y1, x2, y2);
+	// rect(x1, y1, x2, y2);
+	imageMode(CORNER);
+	image(processedImage, x1, y1, 512, 512);
 }
 
 void drawCurrentLoadedImage() {
@@ -350,39 +378,69 @@ void drawCurrentLoadedImage() {
 	imageMode(CENTER);
 
 	if (imageWidth < 512 && imageHeight < 512) {
-		println("Small");
+		// println("Small");
 		image(currentlyLoadedImage, xc, yc);
 	}
 	else if (imageWidth == imageHeight) {
-		println("Square");
+		// println("Square");
 		image(currentlyLoadedImage, xc, yc);
 	}
 	else if (imageWidth > imageHeight) {
-		println("Long");
+		// println("Long");
 		int newHeight = 512 * imageHeight / imageWidth;
 		image(currentlyLoadedImage, xc, yc);
 	}
 	else {
-		println("Tall");
+		// println("Tall");
 		int newWidth = 512 * imageWidth / imageHeight;
 		image(currentlyLoadedImage, xc, yc);
 	}
 
-	float division = float(currentPhoto) / float(numberOfPictures);
+	// getImageAverage(currentlyLoadedImage);
+
+	float division = float(downloadedImages) / float(numberOfPicturesToDownload);
 	progressBarValue = floor(division * 100);
-	println("currentPhoto: "+currentPhoto);
-	println("numberOfPictures: "+numberOfPictures);
-	println("division: "+division);
+	// println("currentPhoto: "+currentPhoto);
+	// println("numberOfPicturesToDownload: "+numberOfPicturesToDownload);
+	// println("division: "+division);
 	progressBar.setValue(progressBarValue);
+}
+
+void drawFinalImage() {
+	
+}
+
+void setupInformationText() {
+	int x1 = 100;
+	int y1 = 100;
+	int areaWidth = 500;
+	int areaHeight = 500;
+
+	infoText = cp5.addTextarea("informationText")
+		.setPosition(x1, y1)
+		.setSize(areaWidth, areaHeight)
+		.setFont(createFont("Proxima Nova", 24))
+		.setColor(255)
+		.setColorBackground(paletteArray[2])
+		.setColorForeground(paletteArray[1])
+		;
+}
+	
+void setupSaveButton() {
+
+}
+	
+void setupRestartButton() {
+
 }
 
 void setupProgressBar() {
 	progressBar = cp5.addSlider("progressBarValue")
-	.setPosition(50, 600)
-	.setRange(0, 100)
-	.setSize(512, 30)
-	.setLabelVisible(false)
-	;
+		.setPosition(50, 600)
+		.setRange(0, 100)
+		.setSize(512, 30)
+		.setLabelVisible(false)
+		;
 
 	cp5.getController("progressBarValue").getValueLabel().hide();
 }
@@ -408,8 +466,16 @@ void drawPixelSwatch() {
 	int y1 = 50 + 512 + 20;
 	int x2 = x1 + 100;
 	int y2 = y1 + 100;
-	fill(162);
+	color averageColor = getImageAverage(currentlyLoadedImage, true);
+	fill(averageColor);
 	rect(x1, y1, x2, y2);
+
+	processedImage.loadPixels();
+	if (downloadedImages < processedImage.pixels.length) {
+		println("downloadedImages: "+downloadedImages);
+		processedImage.pixels[downloadedImages - 1] = averageColor;
+	}
+	processedImage.updatePixels();
 }
 
 int checkFolderSize(City city) {
@@ -433,6 +499,7 @@ int checkFolderSize(City city) {
 	// }
 
 	photoCount = filenames.length;
+	downloadedImages = photoCount;
 	return photoCount;
 }
 
@@ -463,7 +530,7 @@ boolean checkPhotoExistence(int photoID) {
 void digitalClaude() {
 	if (claudeFSM == 1) {
 		int totalPics = checkFolderSize(city);
-		int remainingPhotos = numberOfPictures - totalPics;
+		int remainingPhotos = numberOfPicturesToDownload - totalPics;
 		pictureRemainder = remainingPhotos % 100;
 		int photoWhole = remainingPhotos - pictureRemainder;
 
@@ -477,7 +544,8 @@ void digitalClaude() {
 
 		if (!checkPhotoExistence(imageID)) {
 			String path = picturesDirectory + "/" + city.name;
-			String imageUrl = panoArray.getJSONObject(currentPhoto).getString("photo_file_url");
+			String imageUrl = panoArray.getJSONObject(currentPhoto)
+				.getString("photo_file_url");
 			PImage downloadedPhoto = loadImage(imageUrl);
 			currentlyLoadedImage = downloadedPhoto;
 			downloadedPhoto.save(path + "/" + str(imageID) + ".jpg");
@@ -488,7 +556,7 @@ void digitalClaude() {
 			currentPhoto++;
 		}
 
-		if (checkFolderSize(city) == numberOfPictures) {
+		if (checkFolderSize(city) == numberOfPicturesToDownload) {
 			println("All done downloading!");
 			claudeFSM = 3;
 		}
@@ -523,6 +591,34 @@ JSONArray panoramioGetter(City city, int picMaxNumber, int picMinNumber) {
 	photoList = panoramioResponse.getJSONArray("photos");
 
 	return photoList;
+}
+
+color getImageAverage(PImage victimImage, boolean cropOffTop) {
+	int dimension = victimImage.width * victimImage.height;
+	if (cropOffTop) {
+		dimension = dimension/3;
+	}
+	victimImage.loadPixels();
+
+	color averageColor;
+
+	int averageRed = 0;
+	int averageGreen = 0;
+	int averageBlue = 0;
+
+	for (int i = 0; i < dimension; ++i) {
+		averageRed += red(victimImage.pixels[i]);
+		averageGreen += green(victimImage.pixels[i]);
+		averageBlue += blue(victimImage.pixels[i]);
+	}
+
+	averageRed = averageRed / dimension;
+	averageGreen = averageGreen / dimension;
+	averageBlue = averageBlue / dimension;
+
+	averageColor = color(averageRed, averageGreen, averageBlue);
+
+	return averageColor;
 }
 
 int averageInt(int... numbers) {
