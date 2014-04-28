@@ -7,6 +7,8 @@ Textarea mapTextArea;
 Textarea pixelData;
 Textarea infoText;
 Button mapButton;
+Button saveButton;
+Button restartButton;
 Slider progressBar;
 
 // color debugGrey = new color(162);
@@ -40,6 +42,7 @@ int screenFSM = 1;
 int mapFSM = -1;
 int claudeFSM = 1;
 int progressBarValue = 0;
+// How many pictures to download and process. Change for debugging.
 int numberOfPicturesToDownload = 1024;
 int downloadedImages;
 int pictureRemainder;
@@ -94,9 +97,11 @@ void setup() {
 	setupInformationText();
 	setupSaveButton();
 	setupRestartButton();
+
+	// println("saveButton: "+saveButton);
 	
-	// Sets the beginning window. Change for debugging.
-	windowSwitcher(3);
+	// Sets the beginning window. Default value is 1. Change for debugging.
+	windowSwitcher(1);
 }
 
 void draw() {
@@ -133,6 +138,10 @@ void controlEvent(ControlEvent theEvent) {
 			// println(mapFSM);
 			windowSwitcher(2);
 		}
+		else if (theEvent.controller().name()=="saveButton") {
+			processedImage.save(city.name + "_" + 
+				str(numberOfPicturesToDownload) + "samples" + ".jpg");
+		}
 		else {
 			// print("control event from : "+theEvent.controller().name());
    			// println(", value : "+theEvent.controller().value());
@@ -163,6 +172,10 @@ void windowSwitcher(int windowState) {
 
 		progressBar.setVisible(false);
 		pixelData.setVisible(false);
+
+		infoText.setVisible(false);
+		saveButton.setVisible(false);
+		restartButton.setVisible(false);
 	}
 	else if (windowState == 2) {
 		screenFSM = 2;
@@ -173,6 +186,10 @@ void windowSwitcher(int windowState) {
 
 		progressBar.setVisible(true);
 		pixelData.setVisible(true);
+
+		infoText.setVisible(false);
+		saveButton.setVisible(false);
+		restartButton.setVisible(false);
 	}
 	else if (windowState == 3) {
 		screenFSM = 3;
@@ -183,6 +200,10 @@ void windowSwitcher(int windowState) {
 
 		progressBar.setVisible(false);
 		pixelData.setVisible(false);
+
+		infoText.setVisible(true);
+		saveButton.setVisible(true);
+		restartButton.setVisible(true);
 	}
 }
 
@@ -407,14 +428,15 @@ void drawCurrentLoadedImage() {
 }
 
 void drawFinalImage() {
-	
+	imageMode(CORNER);
+	image(processedImage, 572, 75, 512, 512);
 }
 
 void setupInformationText() {
 	int x1 = 100;
-	int y1 = 100;
-	int areaWidth = 500;
-	int areaHeight = 500;
+	int y1 = 125;
+	int areaWidth = 350;
+	int areaHeight = 412;
 
 	infoText = cp5.addTextarea("informationText")
 		.setPosition(x1, y1)
@@ -427,11 +449,37 @@ void setupInformationText() {
 }
 	
 void setupSaveButton() {
+	PFont p = createFont("Proxima Nova", 24);
+	cp5.setControlFont(p);
 
+	saveButton = cp5.addButton("saveButton")
+		.setPosition(100, 575)
+		.setHeight(50)
+		.setWidth(160)
+		.setCaptionLabel("Save")
+		.setColorBackground(paletteArray[0])
+		.setColorForeground(paletteArray[3])
+		.setColorActive(paletteArray[4])
+		.align(ControlP5.CENTER, ControlP5.CENTER, 
+			ControlP5.CENTER, ControlP5.CENTER)
+		;
 }
 	
 void setupRestartButton() {
+	PFont p = createFont("Proxima Nova", 24);
+	cp5.setControlFont(p);
 
+	restartButton = cp5.addButton("restartButton")
+		.setPosition(290, 575)
+		.setHeight(50)
+		.setWidth(160)
+		.setCaptionLabel("Restart")
+		.setColorBackground(paletteArray[0])
+		.setColorForeground(paletteArray[3])
+		.setColorActive(paletteArray[4])
+		.align(ControlP5.CENTER, ControlP5.CENTER, 
+			ControlP5.CENTER, ControlP5.CENTER)
+		;
 }
 
 void setupProgressBar() {
@@ -519,7 +567,7 @@ boolean checkPhotoExistence(int photoID) {
 
 	for (int i = 0; i < filenames.length; ++i) {
 		if (filenames[i].equals(filename)) {
-			print("We have a match!");
+			println("We have a match!");
 			return true;
 		}
 	}
@@ -565,7 +613,7 @@ void digitalClaude() {
 		}
 	}
 	else if (claudeFSM == 3) {
-		
+		windowSwitcher(3);
 	}
 }
 
