@@ -45,7 +45,7 @@ int mapFSM = -1;
 int claudeFSM = 1;
 int progressBarValue = 0;
 // How many pictures to download and process. Change for debugging.
-int numberOfPicturesToDownload = 1024;
+int numberOfPicturesToDownload = 512;
 int downloadedImages;  
 int pictureRemainder;
 int currentDownloadedPhoto = 0;
@@ -674,7 +674,8 @@ void digitalClaude() {
 		}
 	}
 	else if (claudeFSM == 3) {
-		int imageID = panoArray.getJSONObject(currentDownloadedPhoto).getInt("photo_id");
+		int imageID = panoArray.getJSONObject(currentDownloadedPhoto)
+			.getInt("photo_id");
 
 		if (!checkPhotoExistence(imageID)) {
 			String path = picturesDirectory + "/" + city.name;
